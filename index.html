@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WEB SCRAPER</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & tokens ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #060810;
+  --surface:    #0c0f1a;
+  --surface-2:  #111627;
+  --border:     #1a2236;
+  --border-hi:  #243050;
+  --accent:     #4f9eff;
+  --accent-dim: rgba(79,158,255,0.12);
+  --accent-2:   #ff6b6b;
+  --accent-3:   #50fa7b;
+  --text:       #cdd6f4;
+  --text-muted: #6c7a99;
+  --text-dim:   #2a3550;
+  --success:    #50fa7b;
+  --error:      #ff5555;
+  --radius:     12px;
+  --font-ui:    'Space Grotesk', sans-serif;
+  --font-code:  'JetBrains Mono', monospace;
+  --glow:       0 0 40px rgba(79,158,255,0.15);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background ──────────────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,158,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 90%, rgba(80,250,123,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 24px 100px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.site-header {
+  padding: 40px 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 56px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-code);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.logo-pulse {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent-3);
+  box-shadow: 0 0 10px var(--accent-3);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.version-badge {
+  font-family: var(--font-code);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(79,158,255,0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  margin-bottom: 48px;
+  animation: fadeDown 0.5s ease both;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.hero h1 {
+  font-family: var(--font-ui);
+  font-size: clamp(40px, 7vw, 72px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.hero h1 span {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 32px; right: 32px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.4;
+}
+
+.panel:hover { border-color: var(--border-hi); }
+
+.panel-label {
+  font-family: var(--font-code);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* ── Form row ────────────────────────────────────────────────────────────── */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 130px;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.field { display: flex; flex-direction: column; gap: 7px; }
+
+.field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+input[type="text"],
+input[type="url"],
+input[type="number"] {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-code);
+  font-size: 13px;
+  padding: 11px 14px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+input::placeholder { color: var(--text-dim); }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-primary {
+  width: 100%;
+  padding: 13px 24px;
+  background: var(--accent);
+  color: #060810;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  box-shadow: var(--glow);
+  margin-top: 6px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #6daaff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 48px rgba(79,158,255,0.3);
+}
+
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-icon {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+}
+
+/* Download buttons */
+.dl-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.btn-dl {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-code);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-dl:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Progress / Status ───────────────────────────────────────────────────── */
+#status-panel {
+  display: none;
+  animation: fadeUp 0.3s ease both;
+}
+
+.status-inner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.status-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.spinner {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-hi);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+#status-text {
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+}
+
+#status-url {
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+#error-panel {
+  display: none;
+  background: rgba(255,85,85,0.06);
+  border: 1px solid rgba(255,85,85,0.25);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  color: var(--error);
+  font-family: var(--font-code);
+  font-size: 13px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.3s ease both;
+}
+
+/* ── Stats grid ──────────────────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-val {
+  font-family: var(--font-ui);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-lbl {
+  font-family: var(--font-code);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ── Results panel ───────────────────────────────────────────────────────── */
+#results-panel {
+  display: none;
+  animation: fadeUp 0.4s ease both;
+}
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.results-title {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.results-count {
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(79,158,255,0.2);
+}
+
+/* ── Page result cards ───────────────────────────────────────────────────── */
+.page-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.page-card:hover { border-color: var(--border-hi); }
+
+.page-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-card-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-num {
+  font-family: var(--font-code);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.page-url {
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+}
+
+.page-url:hover { text-decoration: underline; }
+
+.page-toggle {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.page-card-header:hover .page-toggle {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.page-toggle.open { transform: rotate(180deg); }
+
+/* ── Content body ────────────────────────────────────────────────────────── */
+.page-content-wrap {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+
+.page-content-wrap.open { display: block; }
+
+.page-content-body {
+  padding: 20px 20px;
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.page-content-body::-webkit-scrollbar { width: 5px; }
+.page-content-body::-webkit-scrollbar-track { background: transparent; }
+.page-content-body::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+/* Heading lines inside content */
+.page-content-body .h-line {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.site-footer {
+  text-align: center;
+  margin-top: 72px;
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero h1 { letter-spacing: -1px; }
+  .panel { padding: 22px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="logo">
+      <div class="logo-pulse"></div>
+      CRAWLER_SYS
+    </div>
+    <span class="version-badge">v9.0 · FULL CONTENT</span>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">// dynamic web content extractor</div>
+    <h1>WEB <span>SCRAPER</span></h1>
+    <p class="hero-sub">Selenium · BFS Crawler · Full text extraction · Zero truncation</p>
+  </section>
+
+  <!-- Config panel -->
+  <div class="panel" style="animation: fadeUp 0.4s ease both;">
+    <div class="panel-label">// configure job</div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Target URL</label>
+        <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Max Pages (1–50)</label>
+        <input type="number" id="pages-input" value="10" min="1" max="50"/>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="scrape-btn" onclick="startScrape()">
+      <span class="btn-icon" id="btn-icon">▶</span>
+      <span id="btn-label">START SCRAPING</span>
+    </button>
+  </div>
+
+  <!-- Status -->
+  <div id="status-panel">
+    <div class="status-inner">
+      <div class="status-top">
+        <div class="spinner"></div>
+        <span id="status-text">Initialising…</span>
+      </div>
+      <div id="status-url"></div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="error-panel"></div>
+
+  <!-- Results -->
+  <div id="results-panel">
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid" style="display:none">
+      <div class="stat-box">
+        <div class="stat-val" id="stat-crawled">—</div>
+        <div class="stat-lbl">Crawled</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-saved">—</div>
+        <div class="stat-lbl">Saved</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-skipped">—</div>
+        <div class="stat-lbl">Skipped</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-time">—</div>
+        <div class="stat-lbl">Seconds</div>
+      </div>
+    </div>
+
+    <!-- Downloads -->
+    <div class="dl-row" id="dl-row" style="display:none">
+      <button class="btn-dl" onclick="downloadFile('txt')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download combined_output.txt
+      </button>
+      <button class="btn-dl" onclick="downloadFile('json')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download JSON
+      </button>
+    </div>
+
+    <!-- Page cards -->
+    <div class="results-header" id="results-header" style="display:none">
+      <div class="results-title">Extracted Pages</div>
+      <div class="results-count" id="results-count">0 pages</div>
+    </div>
+
+    <div id="cards-container"></div>
+  </div>
+
+  <footer class="site-footer">WEB SCRAPER — FastAPI + Selenium + BFS · Full content extraction · No summaries</footer>
+</div>
+
+<script>
+/* ── State ──────────────────────────────────────────────────────────────── */
+let _jobId     = null;
+let _pollTimer = null;
+let _isRunning = false;
+
+/* ── Helpers ────────────────────────────────────────────────────────────── */
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function $(id) { return document.getElementById(id); }
+
+function setStatus(msg) {
+  $('status-text').textContent = msg;
+}
+
+function setCurrentUrl(url) {
+  const el = $('status-url');
+  el.textContent = url ? '↳ ' + url : '';
+}
+
+function setProgress(pct) {
+  $('progress-bar').style.width = Math.min(pct, 100) + '%';
+}
+
+function showError(msg) {
+  const p = $('error-panel');
+  p.style.display = 'block';
+  p.textContent = '⚠ ' + msg;
+}
+
+function hideError() {
+  $('error-panel').style.display = 'none';
+}
+
+function resetUI() {
+  $('status-panel').style.display = 'none';
+  $('results-panel').style.display = 'none';
+  $('stats-grid').style.display = 'none';
+  $('dl-row').style.display = 'none';
+  $('results-header').style.display = 'none';
+  $('cards-container').innerHTML = '';
+  hideError();
+  setProgress(0);
+}
+
+/* ── Start scrape ───────────────────────────────────────────────────────── */
+async function startScrape() {
+  if (_isRunning) return;
+
+  const url      = $('url-input').value.trim();
+  const maxPages = parseInt($('pages-input').value) || 10;
+
+  if (!url) { showError('Please enter a URL.'); return; }
+
+  resetUI();
+  _isRunning = true;
+  $('scrape-btn').disabled = true;
+  $('btn-icon').textContent = '◌';
+  $('btn-label').textContent = 'RUNNING…';
+  $('status-panel').style.display = 'block';
+  $('results-panel').style.display = 'block';
+  setStatus('Queuing job…');
+  setProgress(5);
+
+  try {
+    const res  = await fetch('/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, max_pages: maxPages }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.detail || 'Failed to queue job.');
+
+    _jobId = data.job_id;
+    setStatus('Browser launching…');
+    setProgress(10);
+    _pollTimer = setInterval(pollStatus, 1800);
+
+  } catch (err) {
+    showError(err.message);
+    resetBtn();
+  }
+}
+
+/* ── Poll status ────────────────────────────────────────────────────────── */
+async function pollStatus() {
+  if (!_jobId) return;
+  try {
+    const res  = await fetch('/status/' + _jobId);
+    const data = await res.json();
+
+    const st       = data.status;
+    const done     = data.pages_done ?? 0;
+    const maxPg    = parseInt($('pages-input').value) || 10;
+    const elapsed  = data.elapsed_sec ?? 0;
+    const curUrl   = data.current_url || '';
+
+    if (st === 'pending') {
+      setStatus('Waiting for worker thread…');
+      setProgress(12);
+
+    } else if (st === 'running') {
+      const pct = Math.min(10 + (done / maxPg) * 80, 88);
+      setStatus(`Crawling · ${done} / ${maxPg} pages · ${elapsed}s`);
+      setCurrentUrl(curUrl);
+      setProgress(pct);
+
+    } else if (st === 'completed') {
+      clearInterval(_pollTimer);
+      setStatus('Done! Loading results…');
+      setCurrentUrl('');
+      setProgress(96);
+      await loadResults();
+
+    } else if (st === 'failed') {
+      clearInterval(_pollTimer);
+      $('status-panel').style.display = 'none';
+      showError(data.error || 'Scrape job failed.');
+      resetBtn();
+    }
+  } catch (e) {
+    /* network blip — keep polling */
+  }
+}
+
+/* ── Load and render results ────────────────────────────────────────────── */
+async function loadResults() {
+  const res  = await fetch('/results/' + _jobId);
+  const data = await res.json();
+
+  if (data.status !== 'completed') {
+    showError(data.error || 'Could not retrieve results.');
+    resetBtn();
+    return;
+  }
+
+  // Stats
+  $('stat-crawled').textContent = data.pages_crawled;
+  $('stat-saved').textContent   = data.pages_saved;
+  $('stat-skipped').textContent = data.pages_skipped;
+  $('stat-time').textContent    = data.duration_sec + 's';
+  $('stats-grid').style.display = 'grid';
+
+  // Downloads
+  $('dl-row').style.display = 'flex';
+
+  // Cards
+  const pages = data.data || [];
+  $('results-count').textContent = pages.length + ' page' + (pages.length !== 1 ? 's' : '');
+  $('results-header').style.display = 'flex';
+
+  const container = $('cards-container');
+  container.innerHTML = '';
+
+  if (pages.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:48px;color:var(--text-muted);
+        font-family:var(--font-code);font-size:13px;border:1px solid var(--border);
+        border-radius:var(--radius);background:var(--surface)">
+        No pages matched the criteria.
+      </div>`;
+  } else {
+    pages.forEach((page, idx) => {
+      container.appendChild(buildCard(page, idx + 1));
+    });
+  }
+
+  $('status-panel').style.display = 'none';
+  setProgress(100);
+  resetBtn();
+}
+
+/* ── Build one expandable page card ─────────────────────────────────────── */
+function buildCard(page, num) {
+  const card = document.createElement('div');
+  card.className = 'page-card';
+  card.style.animationDelay = (num * 0.04) + 's';
+
+  const content = (page.full_content || '').trim();
+  const preview = content ? content.slice(0, 200).replace(/\n/g, ' ') + (content.length > 200 ? '…' : '') : '[No content extracted]';
+
+  card.innerHTML = `
+    <div class="page-card-header" onclick="toggleCard(this)">
+      <div class="page-card-left">
+        <div class="page-num">PAGE ${num}</div>
+        <div class="page-title">${esc(page.title || 'Untitled')}</div>
+        <a class="page-url" href="${esc(page.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(page.url)}</a>
+      </div>
+      <div class="page-toggle" id="toggle-${num}">▾</div>
+    </div>
+    <div class="page-content-wrap" id="content-${num}">
+      <div class="page-content-body">${renderContent(content)}</div>
+    </div>
+  `;
+
+  return card;
+}
+
+/* ── Render content with heading highlighting ────────────────────────────── */
+function renderContent(text) {
+  if (!text) return '<span style="color:var(--error)">[No readable content extracted]</span>';
+  return esc(text).split('\n').map(line => {
+    const t = line.trim();
+    if (t.match(/^\[H[1-6]\]/)) {
+      return `<span class="h-line">${line}</span>`;
+    }
+    return line;
+  }).join('\n');
+}
+
+/* ── Toggle card expand/collapse ─────────────────────────────────────────── */
+function toggleCard(headerEl) {
+  const card    = headerEl.parentElement;
+  const num     = headerEl.querySelector('.page-num').textContent.replace('PAGE ', '').trim();
+  const body    = $('content-' + num);
+  const toggle  = $('toggle-' + num);
+
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+    toggle.classList.remove('open');
+  } else {
+    body.classList.add('open');
+    toggle.classList.add('open');
+  }
+}
+
+/* ── Download ────────────────────────────────────────────────────────────── */
+function downloadFile(fmt) {
+  if (!_jobId) return;
+  window.open('/download/' + _jobId + '/' + fmt, '_blank');
+}
+
+/* ── Reset button ────────────────────────────────────────────────────────── */
+function resetBtn() {
+  _isRunning = false;
+  $('scrape-btn').disabled = false;
+  $('btn-icon').textContent = '▶';
+  $('btn-label').textContent = 'START SCRAPING';
+}
+
+/* ── Enter key ───────────────────────────────────────────────────────────── */
+$('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startScrape();
+});
+</script>
+</body>
+</html>
