@@ -1,4 +1,4 @@
-# Dynamic Web Scraping
+# AI-Powered Dynamic Web Content Extraction System using Python and Selenium
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python">
