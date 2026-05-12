@@ -221,35 +221,6 @@ The scraper generates extracted data in multiple formats:
 
 ---
 
-# 📷 Screenshots
-
-## Project Structure
-_Add your screenshots here_
-
-```text
-screenshots/project_structure.png
-```
-
-## Web Interface
-_Add localhost screenshots here_
-
-```text
-<img width="1913" height="835" alt="Screenshot 2026-05-11 170922" src="https://github.com/user-attachments/assets/0a6dd24f-7e92-4781-8d8f-4bbb01bc2dbc" />
-
-```
-
-## Scraping Output
-_Add output screenshots here_
-
-```text
-<img width="1895" height="800" alt="Screenshot 2026-05-11 171001" src="https://github.com/user-attachments/assets/ca17fe5a-8703-4f10-aebc-0b6e11f9ed9e" />
-
-<img width="1913" height="806" alt="Screenshot 2026-05-11 171015" src="https://github.com/user-attachments/assets/1e685032-7cea-4aa4-980d-2599f11ed024" />
-
-```
-
----
-
 # 🧪 Future Improvements
 
 - CAPTCHA handling
